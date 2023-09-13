@@ -15,6 +15,8 @@ class SavingPhotoFromURLToFolderWithName:
         self.create_folder_if_not_exists()
         final_file_path = self.get_final_file_path()
         photo = self.download_photo()
+        if not photo:
+            return
         with open(final_file_path, "wb") as file:
             file.write(photo)
 
@@ -33,8 +35,11 @@ class SavingPhotoFromURLToFolderWithName:
         return self.folder_path + "/" + self.name + "." + PHOTO_EXTENSION
 
     def download_photo(self) -> bytes:
-        r = requests.get(self.url)
-        return r.content
+        try:
+            r = requests.get(self.url, timeout=5)
+            return r.content
+        except:
+            return None
 
 
 class FolderFilesManagement:
