@@ -1,4 +1,13 @@
-import os, time
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s]: %(message)s",
+    handlers=[logging.FileHandler("google_downloader.log"), logging.StreamHandler()],
+)
+
+
+import os, time, threading
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -37,6 +46,7 @@ class GoogleDownloader:
         self.search_term()
         self.load_all_photos()
         self.download_images()
+        self.driver.quit()
 
     def create_driver(self):
         self.driver = webdriver.Chrome()
@@ -49,12 +59,10 @@ class GoogleDownloader:
             accept_button = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//*[@id="L2AGLb"]/div'))
             )
-        except:
-            print("No cookies button")
-        try:
             accept_button.click()
-        except:
-            print("Error - Can't click cookies button")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            print("No cookies button")
 
     def switch_to_images(self):
         try:
@@ -63,35 +71,29 @@ class GoogleDownloader:
                     (By.XPATH, '//*[@id="gb"]/div/div[1]/div/div[2]/a')
                 )
             )
-        except:
-            raise Exception("Error - No images button")
-        try:
             images_button.click()
-        except:
-            raise Exception("Error - Can't click images button")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            raise Exception("Error - No images button")
 
     def search_term(self):
         try:
             search_bar = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//*[@id="APjFqb"]'))
             )
-        except:
-            raise Exception("Error - No search bar")
-        try:
             search_bar.send_keys(self.searching_term)
-        except:
-            raise Exception("Error - Can't send keys to search bar")
-        try:
             search_bar.submit()
-        except:
-            raise Exception("Error - Can't submit search bar")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            raise Exception("Error - No search bar")
 
     def load_all_photos(self):
         self.scroll_down()
         while True:
             try:
                 self.click_button_and_scroll_down()
-            except:
+            except Exception as e:
+                logging.error(f"Unexpected error: {e}")
                 break
 
     def click_button_and_scroll_down(self):
@@ -104,13 +106,11 @@ class GoogleDownloader:
                     )
                 )
             )
-        except:
-            raise Exception("Error - No button")
-        try:
             button.click()
-        except:
-            raise Exception("Error - Can't click button")
-        self.scroll_down()
+            self.scroll_down()
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            raise Exception("Error - No button")
 
     def scroll_down(self):
         last_height = 0
@@ -141,10 +141,11 @@ class GoogleDownloader:
             if img_url:
                 self.save_image(img_url)
             else:
-                print("Error - No image url")
+                print("Error - No image")
             try:
                 self.switch_to_next_img()
-            except:
+            except Exception as e:
+                logging.error(f"Unexpected error: {e}")
                 break
 
     def click_first_div_with_img(
@@ -156,21 +157,23 @@ class GoogleDownloader:
             self.img_div = self.driver.find_element(
                 By.XPATH, '//*[@id="islrg"]/div[1]/div[1]'
             )
-        except:
-            raise Exception("Error - No divs")
-        try:
             self.img_div.click()
-        except:
-            raise Exception("Error - Can't click div")
-        time.sleep(0.5)
+            time.sleep(0.5)
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            raise Exception("Error - No divs")
 
     def switch_to_next_img(self):
-        old_url = self.driver.current_url
-        self.get_next_img_btn()
-        self.next_img_btn.click()
-        time.sleep(0.5)
-        new_url = self.driver.current_url
-        if old_url == new_url:
+        try:
+            old_url = self.driver.current_url
+            self.get_next_img_btn()
+            self.next_img_btn.click()
+            time.sleep(0.5)
+            new_url = self.driver.current_url
+            if old_url == new_url:
+                raise Exception("Error - No next img btn")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
             raise Exception("Error - No next img btn")
 
     def get_next_img_btn(self):
@@ -179,7 +182,8 @@ class GoogleDownloader:
                 By.XPATH,
                 '//*[@id="Sva75c"]/div[2]/div[2]/div[2]/div[2]/c-wiz/div/div/div/div[1]/div/div[2]/div[1]/div/button[2]',
             )
-        except:
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
             raise Exception("Error - No next img btn")
 
     def get_single_image(self):
@@ -197,7 +201,8 @@ class GoogleDownloader:
             if src == None:
                 src = img.get_attribute("data-src")
             return src
-        except:
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
             print("Error - No image")
 
     def download_more_imgs(self):
@@ -207,15 +212,13 @@ class GoogleDownloader:
         self.close_tab_and_switch_to_first_tab()
 
     def open_more_imgs_in_new_tab_and_switch_tab(self):
-        more_imgs_url = self.get_more_imgs_url()
         try:
+            more_imgs_url = self.get_more_imgs_url()
             self.driver.switch_to.new_window("tab")
-        except:
-            raise Exception("Error - Can't switch to new tab")
-        try:
             self.driver.get(more_imgs_url)
-        except:
-            raise Exception("Error - Can't get more imgs url")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            raise Exception("Error - No more imgs url")
 
     def close_tab_and_switch_to_first_tab(self):
         self.driver.close()
@@ -227,19 +230,25 @@ class GoogleDownloader:
                 By.XPATH,
                 '//*[@id="Sva75c"]/div[2]/div[2]/div[2]/div[2]/c-wiz/div/div/div/c-wiz/div/div/div/div/div[1]/a',
             )
-        except:
+            more_imgs_url = more_imgs_btn.get_attribute("href")
+            return more_imgs_url
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
             raise Exception("Error - No more imgs btn")
-        more_imgs_url = more_imgs_btn.get_attribute("href")
-        return more_imgs_url
+
+    def save_image_threaded(self, img_url):
+        try:
+            img_name = self.get_converted_img_url_to_name_as_photo(img_url)
+            photo = SavingPhotoFromURLToFolderWithName(
+                img_url, self.folder_path, img_name
+            )
+            photo.save_photo()
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
 
     def save_image(self, img_url):
-        img_name = self.get_converted_img_url_to_name_as_photo(img_url)
-        photo = SavingPhotoFromURLToFolderWithName(img_url, self.folder_path, img_name)
-        try:
-            photo.save_photo()
-        except:
-            # print("Error - Just saved photo")
-            pass
+        thread = threading.Thread(target=self.save_image_threaded, args=(img_url,))
+        thread.start()
 
     def get_converted_img_url_to_name_as_photo(self, img_url):
         img_name = img_url.replace("https://", "")
