@@ -9,7 +9,7 @@ Stacktrace:
 6   chromedriver                        0x0000000102b30ef4 chromedriver + 478964
 7   chromedriver                        0x0000000102e8559c chromedriver + 3970460
 8   chromedriver                        0x0000000102e896f0 chromedriver + 3987184
-9   chromedriver                        0x0000000102e8f5b4 chromedriver + 4011444
+9   chromedrivear                        0x0000000102e8f5b4 chromedriver + 4011444
 10  chromedriver                        0x0000000102e8a2fc chromedriver + 3990268
 11  chromedriver                        0x0000000102e621c0 chromedriver + 3826112
 12  chromedriver                        0x0000000102ea6088 chromedriver + 4104328
